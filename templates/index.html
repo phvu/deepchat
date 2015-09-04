@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>DeepChat</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+
+  <link rel='stylesheet prefetch' href='http://fonts.googleapis.com/css?family=Open+Sans'>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<div class="demo">
+  <svg class="sidebar" viewBox="0 0 300 500">
+    <path class="s-path" fill="#fff" d="M0,0 50,0 a0,250 0 1,1 0,500 L0,500"></path>
+  </svg>
+  <div class="static">
+    <div class="static__text">
+      <p>Welcome!</p>
+      <p class="small">Pull the sidebar to start</p>
+    </div>
+  </div>
+  <div class="sidebar-content">
+    <div class="contact">
+      <img src="http://i.imgur.com/ae5r9VA.png" alt="" class="contact__photo" />
+      <span class="contact__name">English</span>
+      <span class="contact__status online"></span>
+    </div>
+    <div class="contact">
+      <img src="http://i.imgur.com/tnMJGyT.png" alt="" class="contact__photo" />
+      <span class="contact__name">Vietnamese</span>
+      <span class="contact__status online"></span>
+    </div>
+    <div class="search">
+      <img src="http://i.imgur.com/t8TeL1S.png" alt="" class="search__img" />
+      <input type="text" class="search__input" placeholder="Search" />
+    </div>
+  </div>
+  <div class="chat">
+    <span class="chat__back"></span>
+    <span class="chat__status">status</span>
+    <div class="chat__person">
+      <span class="chat__online active"></span>
+      <span class="chat__name">Huehue Huehue</span>
+    </div>
+    <div class="chat__messages">
+      <div class="chat__msgRow">
+        <div class="chat__message mine">Such SVG, much Javascript, very CSS!</div>
+      </div>
+      <div class="chat__msgRow">
+        <div class="chat__message notMine">Wow!</div>
+      </div>
+      <div class="chat__msgRow">
+        <div class="chat__message notMine">Very elastic! Such easings!</div>
+      </div>
+      <div class="chat__msgRow">
+        <div class="chat__message mine">
+          Check out my other <a href="http://codepen.io/suez/public/" target="_blank">pens</a>
+        </div>
+      </div>
+    </div>
+    <input type="text" class="chat__input" placeholder="Your message" />
+  </div>
+</div>
+
+  <script src="{{ url_for('static', filename='js/jquery-1.11.2.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+
+</body>
+
+</html>

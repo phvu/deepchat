@@ -84,12 +84,13 @@ class ChatServer(Process):
                         except (UnicodeEncodeError, UnicodeDecodeError) as ex:
                             print 'Error detokenizing: ', m
                             print ex
-                    if debugging:
-                        return jsonify(debug=True, messages=[m for m, _ in detokenized_messages],
-                                       costs=[c for _, c in detokenized_messages])
-                    return jsonify(message=detokenized_messages[0][0] if
-                                   detokenized_messages[0][1] < conf.RESPONSE_MAX_COST else
-                                   get_what_was_that(language))
+                    if len(detokenized_messages) > 0:
+                        if debugging:
+                            return jsonify(debug=True, messages=[m for m, _ in detokenized_messages],
+                                           costs=[c for _, c in detokenized_messages])
+                        return jsonify(message=detokenized_messages[0][0] if
+                                       detokenized_messages[0][1] < conf.RESPONSE_MAX_COST else
+                                       get_what_was_that(language))
                 return jsonify(message=get_what_was_that(language))
 
             except (UnicodeEncodeError, UnicodeDecodeError) as ex:
@@ -107,6 +108,7 @@ class ChatServer(Process):
         def index():
             return render_template('index.html')
 
+        print 'Done. Starting web server.'
         # app.run(host='0.0.0.0', port=conf.SERVICE_PORT, threaded=True, use_reloader=False)
 
         http_server = HTTPServer(WSGIContainer(app))

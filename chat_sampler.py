@@ -197,7 +197,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
             "Sample (of find with beam-serch) translations from a translation model")
     parser.add_argument("--state",
-            required=True, help="State to use")
+            required=False, help="State to use")
     parser.add_argument("--beam-search",
             action="store_true", help="Beam size, turns on beam-search")
     parser.add_argument("--beam-size",

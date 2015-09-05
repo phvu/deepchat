@@ -170,6 +170,15 @@ $(document).ready(function() {
         name = $(this).find(".contact__name").text(),
         online = $(this).find(".contact__status").hasClass("online");
     $(".chat__name").text(name);
+
+    // hard-coding...
+    isVietnam = name == 'Vietnamese';
+    if (isVietnam) {
+      $(".chat__status").text("Xin chào!");
+    } else {
+      $(".chat__status").text("Je parle anglais!");
+    }
+
     $(".chat__online").removeClass("active");
     if (online) $(".chat__online").addClass("active");
     ripple($(that),e);
@@ -191,6 +200,11 @@ $(document).ready(function() {
         }, "inCubic");
       }, sContTrans);
     }, sContTrans);
+    console.log('finished .contact click');
+    chat_msg = $(".chat__messages");
+    chat_msg.html("");
+    chat_init_txt = isVietnam ? "Chào bạn!" : "Hi there!";
+    chat_msg.append('<div class="chat__msgRow"><div class="chat__message notMine">' + chat_init_txt + '</div></div>');
   });
 
   $(document).on("click", ".chat__back", function() {
@@ -212,6 +226,29 @@ $(document).ready(function() {
         });
       }, "inCubic");
     }, sContTrans);
+  });
+
+  $(document).on("submit", ".chat__form", function(e) {
+    e.preventDefault();
+
+    txt = $(".chat__input").val();
+    chat_msg = $(".chat__messages");
+    chat_msg.append('<div class="chat__msgRow"><div class="chat__message mine">' + txt + '</div></div>');
+    $(".chat__input").val("");
+    chat_msg.scrollTop(chat_msg[0].scrollHeight);
+
+    $.ajax({ type: "GET", url: "/chat", data: { input: txt, lang: 'english' }}).done(function(data) {
+      if (data.error) {
+        chat_msg.append('<div class="chat__msgRow"><div class="chat__message error">' + data.message + '</div></div>');
+      } else if (data.debug) {
+        console.log(data);
+      } else {
+        chat_msg.append('<div class="chat__msgRow"><div class="chat__message notMine">'
+            + data.message + '</div></div>');
+      }
+      chat_msg.scrollTop(chat_msg[0].scrollHeight);
+    });
+    return false;
   });
 
   $(window).on("resize", function() {

@@ -12,7 +12,8 @@ $(document).ready(function() {
       frame = 1000 / 60,
       animTime = 600,
       sContTrans = 200,
-      animating = false;
+      animating = false,
+      language = 'english';
 
   var easings = {
     smallElastic: function(t,b,c,d) {
@@ -175,8 +176,10 @@ $(document).ready(function() {
     isVietnam = name == 'Vietnamese';
     if (isVietnam) {
       $(".chat__status").text("Xin chào!");
+      language = 'vietnamese';
     } else {
       $(".chat__status").text("Je parle anglais!");
+      language = 'english';
     }
 
     $(".chat__online").removeClass("active");
@@ -237,9 +240,10 @@ $(document).ready(function() {
     $(".chat__input").val("");
     chat_msg.scrollTop(chat_msg[0].scrollHeight);
 
-    $.ajax({ type: "GET", url: "/chat", data: { input: txt, lang: 'english' }}).done(function(data) {
+    $.ajax({ type: "GET", url: "/chat", data: { input: txt, lang: language }}).done(function(data) {
       if (data.error) {
-        chat_msg.append('<div class="chat__msgRow"><div class="chat__message error">' + data.message + '</div></div>');
+        chat_msg.append('<div class="chat__msgRow"><div class="chat__message error">Error: <i>'
+          + data.message + '</i></div></div>');
       } else if (data.debug) {
         console.log(data);
       } else {

@@ -1,7 +1,7 @@
 import os
 
 # flask
-SECRET_KEY = '\xbf\xfc&1T\x90\xe6\x8c\x8d\xd3\x91\x08\xaaRJ\x9c\x8aaw\xa5\x17\xe3\xbd\xa9'
+SECRET_KEY = 'Your secret key, get with os.urandom(24)'
 DEBUG = True
 
 SERVICE_PORT = 5000

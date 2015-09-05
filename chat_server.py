@@ -2,37 +2,18 @@ import os
 from multiprocessing import Process
 import subprocess
 from flask import Flask, request, render_template, jsonify
+from tornado.wsgi import WSGIContainer
+from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
 from chat_sampler import ChatSampler, parse_args
 import conf
-
-
-def get_config(language):
-    my_args = parse_args()
-    my_args.beam_search = True
-    if language == conf.LANGUAGES[0]:
-        my_args.model_path = 'model/encdec_model.npz'
-        my_args.state = 'model/encdec_state.pkl'
-        my_args.changes = "indx_word = './model/ivocab.in.pkl', " \
-                          "indx_word_target = './model/ivocab.out.pkl', " \
-                          "word_indx = './model/vocab.in.pkl', " \
-                          "word_indx_trgt = './model/vocab.out.pkl'"
-    elif language == conf.LANGUAGES[1]:
-        my_args.model_path = 'model/encdec_model.npz'
-        my_args.state = 'model/encdec_state.pkl'
-        my_args.changes = "indx_word = './model/ivocab.in.pkl', " \
-                          "indx_word_target = './model/ivocab.out.pkl', " \
-                          "word_indx = './model/vocab.in.pkl', " \
-                          "word_indx_trgt = './model/vocab.out.pkl'"
-    else:
-        raise ValueError('Unknown language: {}'.format(language))
-    return my_args
 
 
 def get_what_was_that(language):
     if language == conf.LANGUAGES[0]:
         return 'What was that?'
     elif language == conf.LANGUAGES[1]:
-        return 'Xin loi toi khong hieu.'
+        return 'Xin l\xe1\xbb\x97i t\xc3\xb4i kh\xc3\xb4ng hi\xe1\xbb\x83u :)'
     else:
         raise ValueError('Unknown language: {}'.format(language))
 
@@ -41,8 +22,8 @@ def reverse(input_chat):
     return ' '.join(input_chat.split(' ')[::-1])
 
 
-def filter_messages(messages):
-    return [m for m in messages if 'UNK' not in m and len(m.strip()) > 0]
+def filter_messages(messages, costs):
+    return [(m, c) for m, c in zip(messages, costs) if 'UNK' not in m and len(m.strip()) > 0]
 
 
 def sample_chat(input_chat, sampler):
@@ -55,7 +36,8 @@ class ChatServer(Process):
         Process.__init__(self)
         self.samplers = {}
         for l in conf.LANGUAGES:
-            my_args = get_config(l)
+            my_args = parse_args()
+            my_args = conf.get_config(l, my_args)
             print(my_args)
             self.samplers[l] = ChatSampler(my_args)
 
@@ -65,6 +47,8 @@ class ChatServer(Process):
     def run(self):
         app = Flask(__name__)
 
+        app.config.from_object(conf)
+
         @app.route('/response_cost')
         def response_cost_flask():
             if 'val' in request.args:
@@ -73,34 +57,43 @@ class ChatServer(Process):
 
         @app.route('/chat', methods=['GET'])
         def chat_flask():
+            try:
+                debugging = 'debug' in request.args
+                sentence = request.args.get('input')
+                language = request.args.get('lang')
 
-            debugging = 'debug' in request.args
-            sentence = request.args.get('input')
-            language = request.args.get('lang')
+                if language not in self.samplers:
+                    return jsonify(error=True, message='Invalid language: {}'.format(language))
 
-            if language not in self.samplers:
-                return jsonify(error=True, message='Invalid language: {}'.format(language))
+                print 'Sentence: ', sentence
+                tokenizer = subprocess.Popen(self.tokenizer_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                sentence, _ = tokenizer.communicate(sentence.encode('utf-8'))
+                print 'Sentence after tokenize: ', sentence
 
-            print 'Sentence: ', sentence
-            tokenizer = subprocess.Popen(self.tokenizer_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            sentence, _ = tokenizer.communicate(sentence.encode('utf-8'))
-            print 'Sentence after tokenize: ', sentence
+                [messages, costs] = sample_chat(sentence, self.samplers[language])
 
-            [messages, costs] = sample_chat(sentence, self.samplers[language])
-
-            if costs is not None and len(costs) > 0:
-                messages = filter_messages(messages)
-                if len(messages) > 0:
-                    for i in range(0, len(messages)):
-                        detokenizer = subprocess.Popen(self.detokenizer_cmd, stdin=subprocess.PIPE,
-                                                       stdout=subprocess.PIPE)
-                        detokenized_sentence, _ = detokenizer.communicate(messages[i].encode('utf-8'))
-                        messages[i] = detokenized_sentence
+                if costs is not None and len(costs) > 0:
+                    messages = filter_messages(messages, costs)
+                    detokenized_messages = []
+                    for m, c in messages:
+                        try:
+                            detokenizer = subprocess.Popen(self.detokenizer_cmd, stdin=subprocess.PIPE,
+                                                           stdout=subprocess.PIPE)
+                            detokenized_sentence, _ = detokenizer.communicate(m)
+                            detokenized_messages.append((detokenized_sentence, c))
+                        except (UnicodeEncodeError, UnicodeDecodeError) as ex:
+                            print 'Error detokenizing: ', m
+                            print ex
                     if debugging:
-                        return jsonify(debug=True, messages=messages, costs=costs)
-                    return jsonify(
-                        message=messages[0] if costs[0] < conf.RESPONSE_MAX_COST else get_what_was_that(language))
-            return jsonify(message=get_what_was_that(language))
+                        return jsonify(debug=True, messages=[m for m, _ in detokenized_messages],
+                                       costs=[c for _, c in detokenized_messages])
+                    return jsonify(message=detokenized_messages[0][0] if
+                                   detokenized_messages[0][1] < conf.RESPONSE_MAX_COST else
+                                   get_what_was_that(language))
+                return jsonify(message=get_what_was_that(language))
+
+            except (UnicodeEncodeError, UnicodeDecodeError) as ex:
+                return jsonify(error=True, message='{}'.format(ex))
 
         @app.route('/shutdown', methods=['GET', 'POST', 'PUT'])
         def terminate_flask():
@@ -114,8 +107,11 @@ class ChatServer(Process):
         def index():
             return render_template('index.html')
 
-        print 'Listening to 0.0.0.0:5000...'
-        app.run(host='0.0.0.0', debug=True, threaded=True, use_reloader=False)
+        # app.run(host='0.0.0.0', port=conf.SERVICE_PORT, threaded=True, use_reloader=False)
+
+        http_server = HTTPServer(WSGIContainer(app))
+        http_server.listen(conf.SERVICE_PORT)
+        IOLoop.instance().start()
 
 
 if __name__ == '__main__':

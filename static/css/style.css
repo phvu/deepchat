@@ -311,16 +311,16 @@ svg {
   font-size: 1.4rem;
   font-family: "Open Sans", Helvetica, Arial, sans-serif;
 }
-.chat__message.notMine {
+.chat__message.mine {
   color: #2B2342;
   border: 1px solid #DFDFDF;
 }
 .chat__message.error {
-  color: #2B2342;
-  border: 1px solid #DFDFDF;
+  float: right;
+  color: #23244E;
   background: #CC6666;
 }
-.chat__message.mine {
+.chat__message.notMine {
   float: right;
   color: #23244E;
   background: #E9EAF3;

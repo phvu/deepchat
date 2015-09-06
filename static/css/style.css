@@ -356,6 +356,44 @@ svg {
   border-radius: 50%;
 }
 
+.footer {
+  position: absolute;
+  bottom: 0;
+  left: 49%;
+}
+
+.footer a {
+  -moz-transition: color 0.2s ease-in-out;
+  -webkit-transition: color 0.2s ease-in-out;
+  -ms-transition: color 0.2s ease-in-out;
+  transition: color 0.2s ease-in-out;
+  color: #a5a9ad;
+}
+
+.footer a:active, .footer a:focus, .footer a:hover {
+    color: #fff;
+}
+
+.footer ul {
+  list-style-type: none;
+  padding: 0;
+  padding-bottom: 2em;
+}
+
+.footer ul li {
+  display: inline;
+  padding-right: 2.5em;
+}
+
+.footer ul li:last-child {
+  padding-right: 0;
+}
+
+.footer .icon {
+  text-decoration: none;
+  border-bottom: none;
+}
+
 @-webkit-keyframes animRipple {
   to {
     -webkit-transform: scale(2.5);
